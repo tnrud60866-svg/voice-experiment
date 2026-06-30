@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>음성 실험 문장 제시</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff !important;
+    color: #151515;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+  }
+  body { touch-action: manipulation; }
+  .screen {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: #ffffff !important;
+  }
+  .card {
+    width: min(880px, 100%);
+    background: #ffffff !important;
+    padding: 44px;
+    text-align: center;
+  }
+  p.guide {
+    white-space: pre-line;
+    font-size: clamp(18px, 2.8vw, 25px);
+    line-height: 1.75;
+    margin: 0 0 28px;
+    color: #222;
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  input {
+    width: min(360px, 100%);
+    font-size: 20px;
+    padding: 15px 18px;
+    border: 1px solid #d0d0d0;
+    border-radius: 14px;
+    outline: none;
+  }
+  input:focus { border-color: #333; }
+  button {
+    font-size: 20px;
+    padding: 15px 24px;
+    border: 0;
+    border-radius: 14px;
+    background: #111;
+    color: white;
+    cursor: pointer;
+  }
+  .sentence {
+    width: 100%;
+    max-width: 1200px;
+    text-align: center;
+    font-size: 84px;
+    line-height: 1.2;
+    font-weight: 700;
+    white-space: nowrap;
+    word-break: normal;
+    overflow: hidden;
+  }
+  .end-text, .break-text {
+    white-space: pre-line;
+    font-size: clamp(32px, 5vw, 60px);
+    line-height: 1.6;
+    font-weight: 800;
+    text-align: center;
+  }
+  .small {
+    margin-top: 18px;
+    color: #555;
+    font-size: 15px;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<section id="start" class="screen">
+  <div class="card">
+    <p class="guide">음성 실험 참여에 감사드립니다.
+다음 장부터 화면에 제시되는 문장을
+편안하게 낭독해 주세요.
+
+실수가 있을 때는 문장을 처음부터 다시 읽으면 됩니다.
+준비가 되었다면, 본인의 이름과 나이를 말씀해 주세요.</p>
+    <div class="row">
+      <input id="participantInitial" type="text" autocomplete="off" placeholder="이니셜을 입력해 주세요" />
+      <button id="startBtn" type="button">시작하기</button>
+    </div>
+  </div>
+</section>
+
+<section id="trial" class="screen hidden">
+  <div class="sentence" id="sentence"></div>
+</section>
+
+<section id="break" class="screen hidden">
+  <div class="card">
+    <div class="break-text">잠시 쉬어가겠습니다.
+
+준비가 되셨으면 실험자가 V 키를 눌러
+다음 문장부터 이어서 진행하겠습니다.</div>
+  </div>
+</section>
+
+<section id="end" class="screen hidden">
+  <div class="card">
+    <div class="end-text">실험이 종료되었습니다.
+감사합니다.</div>
+    <div class="row"><button id="downloadAgain" type="button">파일 다시 저장</button></div>
+  </div>
+</section>
+
+<script>
+const RAW_ITEMS = [{"id": "f22", "sentence": "올 여름은 매우 더워 사람들이 난폭해졌다.", "color": "#E2EFDA"}, {"id": "f33", "sentence": "갑작스러운 해고의 경우 직원의 생존권이 위협받는다.", "color": "#E2EFDA"}, {"id": "f03", "sentence": "눈 앞에 종이 한 장이 놓여있다고 가정한다.", "color": "#E2EFDA"}, {"id": "f47", "sentence": "올해 수능 시험이 매우 어렵게 출제될 예정이다.", "color": "#E2EFDA"}, {"id": "t04", "sentence": "회장이 건립 기념 행사에 불참해서 기사가 났다.", "color": "#DEEBF7"}, {"id": "f24", "sentence": "정책 효과는 두 집단을 비교하여 알 수 있다.", "color": "#E2EFDA"}, {"id": "t48", "sentence": "새 학기를 맞아 혼론을 또 다시 다짐했다.", "color": "#FFF2CC"}, {"id": "t25", "sentence": "기계의 작동 원리가 복잡하다.", "color": "#DEEBF7"}, {"id": "f46", "sentence": "그녀는 그림을 매우 잘 그려 장학금을 받았다.", "color": "#E2EFDA"}, {"id": "t29", "sentence": "기차가 속도를 이기지 못하고 선로를 벗어났다.", "color": "#DEEBF7"}, {"id": "t03", "sentence": "그 정원은 예쁘게 관리가 잘 되어있다.", "color": "#DEEBF7"}, {"id": "f32", "sentence": "그녀는 공무원이기 때문에 카페를 창업하지 못했다.", "color": "#E2EFDA"}, {"id": "f51", "sentence": "그녀는 늘 뜨거운 커피만을 마신다.", "color": "#E2EFDA"}, {"id": "t01", "sentence": "아무래도 부탁을 들어주기엔 곤란한 상황이다.", "color": "#DEEBF7"}, {"id": "f25", "sentence": "주 4일 근무는 생산성에 효과가 있다.", "color": "#E2EFDA"}, {"id": "t44", "sentence": "그가 품에서 언란을 꺼냈을 때 모두가 그를 주목했다.", "color": "#FFF2CC"}, {"id": "t12", "sentence": "그의 성품은 본래 조용하다.", "color": "#DEEBF7"}, {"id": "f35", "sentence": "그는 올해 연봉이 올라 서울에 집을 샀다.", "color": "#E2EFDA"}, {"id": "t45", "sentence": "배가 너무 고파 손론한 마음으로 구걸할 수밖에 없었다.", "color": "#FFF2CC"}, {"id": "f10", "sentence": "척추 동물은 씨를 손상시키지 않고 소화시킨다.", "color": "#E2EFDA"}, {"id": "t02", "sentence": "그 공원 관람은 입소문을 타 하나의 필수 코스가 되었다.", "color": "#DEEBF7"}, {"id": "t24", "sentence": "기본에 충실하기 위해서는 원론부터 다시 해야 한다.", "color": "#DEEBF7"}, {"id": "f42", "sentence": "새로 생긴 카페는 인테리어가 예쁘다.", "color": "#E2EFDA"}, {"id": "t06", "sentence": "투표권을 행사하는 것은 권리이자 의무이다.", "color": "#DEEBF7"}, {"id": "f06", "sentence": "번잡한 곳의 길에 지나가는 보행자를 탐지하는 장치를 매설한다.", "color": "#E2EFDA"}, {"id": "t37", "sentence": "올해 여름 방학에는 꼭 빈란으로 갈 것이다.", "color": "#FFF2CC"}, {"id": "f09", "sentence": "열매는 익어감에 따라 눈에 잘 띄게 변한다.", "color": "#E2EFDA"}, {"id": "t31", "sentence": "사고로 떠난 병사의 혼령을 위로했다.", "color": "#DEEBF7"}, {"id": "t27", "sentence": "연어를 보니 산란할 때가 됐나 보다.", "color": "#DEEBF7"}, {"id": "f19", "sentence": "그는 매우 평범한 일상을 보내기 위해 노력했다.", "color": "#E2EFDA"}, {"id": "t41", "sentence": "그는 소개팅 날 상대가 가져온 맨론에 할 말을 잃었다.", "color": "#FFF2CC"}, {"id": "f01", "sentence": "비가 거세게 내리면서 지붕을 때리고 있다.", "color": "#E2EFDA"}, {"id": "t05", "sentence": "철수는 자꾸 관련 없는 일에 끼어드는 오지랖이 있다.", "color": "#DEEBF7"}, {"id": "t21", "sentence": "그녀의 말실수는 언론의 먹잇감이 되기에 충분했다.", "color": "#DEEBF7"}, {"id": "f02", "sentence": "증거와 가설 사이에는 입증, 반증, 중립만 존재한다.", "color": "#E2EFDA"}, {"id": "t36", "sentence": "내게 단 하나의 꿈이 있다면 번람을 갖는 것이다.", "color": "#FFF2CC"}, {"id": "f18", "sentence": "사람들은 어떤 행위에 대해 도덕적 판단을 한다.", "color": "#E2EFDA"}, {"id": "f27", "sentence": "의료 행위는 전문 지식이 필요하다.", "color": "#E2EFDA"}, {"id": "t35", "sentence": "그녀가 필사적으로 준비한 건론은 철저하게 무시되었다.", "color": "#FFF2CC"}, {"id": "t22", "sentence": "연인 관계에서 연락만큼 중요한 것은 없다.", "color": "#DEEBF7"}, {"id": "f21", "sentence": "기온과 공격성 사이에는 상관관계가 있다.", "color": "#E2EFDA"}, {"id": "t32", "sentence": "갑자기 벌어진 혼란한 사건에 머리가 어지러웠다.", "color": "#DEEBF7"}, {"id": "t33", "sentence": "산꼭대기 건루에 올라 보는 경치가 멋지다.", "color": "#FFF2CC"}, {"id": "t07", "sentence": "임금 삭감으로 근로 의욕이 사라졌다.", "color": "#DEEBF7"}, {"id": "f20", "sentence": "그녀는 오늘 아침에 밥과 국과 김치를 먹었다.", "color": "#E2EFDA"}, {"id": "t46", "sentence": "올 여름에는 풍년이 들어 산랭을 기념할 수 있을 것이다.", "color": "#FFF2CC"}, {"id": "f14", "sentence": "인적 자본에는 교육 수준이 포함된다.", "color": "#E2EFDA"}, {"id": "f30", "sentence": "그는 명랑한 목소리로 연설문을 낭독했다.", "color": "#E2EFDA"}, {"id": "t40", "sentence": "제주도에서 발생한 태풍 난락은 곧 소멸 예정이다.", "color": "#FFF2CC"}, {"id": "t11", "sentence": "변호사의 변론은 차분했지만 힘이 있었다.", "color": "#DEEBF7"}, {"id": "f23", "sentence": "에어컨이 고장 나서 하루종일 땀을 흘렸다.", "color": "#E2EFDA"}, {"id": "t47", "sentence": "전설 속 혼록한 사슴은 뿔이 이 미터나 된다고 했다.", "color": "#FFF2CC"}, {"id": "f48", "sentence": "검은 가디건은 소재에 비해 저렴한 편이었다.", "color": "#E2EFDA"}, {"id": "f43", "sentence": "아침에 내린 커피가 어느새 미지근해졌다.", "color": "#E2EFDA"}, {"id": "t14", "sentence": "방 안에는 난로가 따뜻하게 타고 있었다.", "color": "#DEEBF7"}, {"id": "t19", "sentence": "자격증 기한이 만료되어 재발급을 받아야 한다.", "color": "#DEEBF7"}, {"id": "f17", "sentence": "그 생쥐의 유전자가 돌연변이를 일으켰다.", "color": "#E2EFDA"}, {"id": "t42", "sentence": "나는 당신의 허영, 무지, 만로마저 사랑한다.", "color": "#FFF2CC"}, {"id": "f44", "sentence": "모기는 흡혈 과정에서 고온 스트레스를 받는다.", "color": "#E2EFDA"}, {"id": "t34", "sentence": "철수의 고향은 관래로, 농사 짓는 사람이 대부분이다.", "color": "#FFF2CC"}, {"id": "f15", "sentence": "오케스트라에서 새 바이올린 단원을 채용했다.", "color": "#E2EFDA"}, {"id": "t26", "sentence": "공부를 잘 하는 것보다 윤리적인 사람이 되는 게 더 중요하다.", "color": "#DEEBF7"}, {"id": "f40", "sentence": "참가자들은 투표를 통해 선발되었다.", "color": "#E2EFDA"}, {"id": "t08", "sentence": "글을 읽을 때 단락의 주제를 파악하는 것이 중요하다.", "color": "#DEEBF7"}, {"id": "f39", "sentence": "그녀는 월급의 절반을 복지단체에 기부했다.", "color": "#E2EFDA"}, {"id": "f28", "sentence": "어제 저녁 메뉴가 기억나지 않는다.", "color": "#E2EFDA"}, {"id": "t20", "sentence": "새로 산 소파가 참 안락하고 편안하다.", "color": "#DEEBF7"}, {"id": "t30", "sentence": "삶과 죽음은 자연의 순리를 따른다.", "color": "#DEEBF7"}, {"id": "f31", "sentence": "뇌의 손상은 기억을 떠올리는 것을 방해한다.", "color": "#E2EFDA"}, {"id": "t18", "sentence": "그 배우는 연이은 사건으로 문란하다는 이미지가 박혔다.", "color": "#DEEBF7"}, {"id": "f26", "sentence": "경로 우대를 통해 무료로 지하철을 탈 수 있다.", "color": "#E2EFDA"}, {"id": "f13", "sentence": "박새가 꽃에 내려앉았다.", "color": "#E2EFDA"}, {"id": "t17", "sentence": "글을 쓸 때 중요한 것은 논리의 전개이다.", "color": "#DEEBF7"}, {"id": "f36", "sentence": "해당 계약서는 무효처리 되었음을 밝힙니다.", "color": "#E2EFDA"}, {"id": "f49", "sentence": "단골 카페의 신메뉴를 먹기 위해 아침 일찍 집을 나섰다.", "color": "#E2EFDA"}, {"id": "t09", "sentence": "정부군은 반란 세력을 진압하였다.", "color": "#DEEBF7"}, {"id": "f05", "sentence": "그 가설은 순전히 내기만을 위해 만들어졌다.", "color": "#E2EFDA"}, {"id": "t16", "sentence": "톱스타의 논란에 민심이 돌아섰다.", "color": "#DEEBF7"}, {"id": "f45", "sentence": "눈 앞에 파란색 종이가 있다.", "color": "#E2EFDA"}, {"id": "f52", "sentence": "그는 오늘 늦잠을 자서 지각하고 말았다.", "color": "#E2EFDA"}, {"id": "t43", "sentence": "여름의 지하철은 온로하고 냄새난다.", "color": "#FFF2CC"}, {"id": "t10", "sentence": "상대편의 명쾌한 반론에 승부가 기울었다.", "color": "#DEEBF7"}, {"id": "f11", "sentence": "급격한 온도 변화로 스트레스를 받는다.", "color": "#E2EFDA"}, {"id": "f29", "sentence": "습관이란 일반적으로 행동이 반복되는 것이다.", "color": "#E2EFDA"}, {"id": "f07", "sentence": "유전자나 아원자 입자들을 연구하는 것은 논증을 통해 가능하다.", "color": "#E2EFDA"}, {"id": "t15", "sentence": "홍수로 마을에 난리가 났다.", "color": "#DEEBF7"}, {"id": "f37", "sentence": "국회의장이 새 법을 공포했다.", "color": "#E2EFDA"}, {"id": "f38", "sentence": "사람을 때리는 것은 나쁜 짓이다.", "color": "#E2EFDA"}, {"id": "t39", "sentence": "밤새 차를 달려 아침에는 논로에 도착할 수 있었다.", "color": "#FFF2CC"}, {"id": "f12", "sentence": "모기는 인간의 혈액을 섭취한다.", "color": "#E2EFDA"}, {"id": "t38", "sentence": "겨울에는 본로를 따뜻하게 데워 체온을 유지한다.", "color": "#FFF2CC"}, {"id": "f16", "sentence": "평가자들은 지원자의 성별을 알 수 없었다.", "color": "#E2EFDA"}, {"id": "f34", "sentence": "그는 영업기밀을 소문냈기 때문에 해고당했다.", "color": "#E2EFDA"}, {"id": "f41", "sentence": "영어 실력 향상에는 전화 영어가 좋다.", "color": "#E2EFDA"}, {"id": "t23", "sentence": "갓 귀농한 그는 원래 서울에서 나고 자랐다.", "color": "#DEEBF7"}, {"id": "f04", "sentence": "어느 날 나는 서커스에서 한 남자를 보았다.", "color": "#E2EFDA"}, {"id": "f08", "sentence": "식물은 자신의 씨를 발아 가능한 상태로 만든다.", "color": "#E2EFDA"}, {"id": "t28", "sentence": "그 지역은 산림이 빽빽해서 관광지로 이름이 났다.", "color": "#DEEBF7"}, {"id": "f50", "sentence": "충전기가 고장이 나 휴대폰의 전원이 켜지지 않는다.", "color": "#E2EFDA"}, {"id": "t13", "sentence": "이 통에 담긴 공들을 색깔별로 분리해서 담아라.", "color": "#DEEBF7"}];
+
+let participantInitial = "";
+let trials = [];
+let index = 0;
+let saved = false;
+let breakShown = false;
+
+function shuffle(array) {
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function prepareTrials() {
+  const fixed = RAW_ITEMS.slice(0, 4);
+  const rest = shuffle(RAW_ITEMS.slice(4));
+  const ordered = fixed.concat(rest);
+  return ordered.map((item, i) => ({ ...item, order: i + 1 }));
+}
+
+function showOnly(id) {
+  ["start", "trial", "break", "end"].forEach(screenId => {
+    document.getElementById(screenId).classList.toggle("hidden", screenId !== id);
+  });
+}
+
+function startExperiment() {
+  const value = document.getElementById("participantInitial").value.trim();
+  if (!value) {
+    alert("이니셜을 입력해 주세요.");
+    return;
+  }
+  participantInitial = value;
+  trials = prepareTrials();
+  index = 0;
+  saved = false;
+  breakShown = false;
+  showOnly("trial");
+  showTrial();
+}
+
+function showTrial() {
+  const trial = trials[index];
+  document.body.style.background = "#ffffff";
+  document.getElementById("trial").style.background = "#ffffff";
+  document.getElementById("sentence").textContent = trial.sentence;
+  fitSentenceText();
+}
+
+function nextTrial() {
+  const breakVisible = !document.getElementById("break").classList.contains("hidden");
+  const trialVisible = !document.getElementById("trial").classList.contains("hidden");
+
+  if (breakVisible) {
+    showOnly("trial");
+    showTrial();
+    return;
+  }
+
+  if (!trialVisible) return;
+
+  index += 1;
+
+  if (index === 50 && !breakShown && index < trials.length) {
+    breakShown = true;
+    showOnly("break");
+    return;
+  }
+
+  if (index >= trials.length) {
+    finishExperiment();
+  } else {
+    showTrial();
+  }
+}
+
+function fitSentenceText() {
+  const el = document.getElementById("sentence");
+  if (!el || !el.textContent) return;
+
+  let size = 84;
+  el.style.fontSize = size + "px";
+
+  while (el.scrollWidth > el.clientWidth && size > 14) {
+    size -= 1;
+    el.style.fontSize = size + "px";
+  }
+}
+
+function safeFilename(name) {
+  return (name || "participant").replace(/[\\/:*?"<>|]/g, "_").trim() || "participant";
+}
+
+function xmlEscape(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function makeXlsxBlob(rows) {
+  const files = {
+    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`,
+    "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+    "xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+    "xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="order" sheetId="1" r:id="rId1"/></sheets></workbook>`
+  };
+
+  const sheetRows = [["order","id","sentence"]].concat(rows.map(r => [r.order, r.id, r.sentence]));
+  const sheetData = sheetRows.map((row, rIdx) => `<row r="${rIdx+1}">` + row.map((v, cIdx) => {
+    const col = String.fromCharCode(65 + cIdx);
+    if (typeof v === "number") return `<c r="${col}${rIdx+1}"><v>${v}</v></c>`;
+    return `<c r="${col}${rIdx+1}" t="inlineStr"><is><t>${xmlEscape(v)}</t></is></c>`;
+  }).join("") + `</row>`).join("");
+
+  files["xl/worksheets/sheet1.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="14" customWidth="1"/><col min="3" max="3" width="70" customWidth="1"/></cols><sheetData>${sheetData}</sheetData></worksheet>`;
+  return zipStore(files);
+}
+
+function crc32(buf) {
+  let table = crc32.table || (crc32.table = Array.from({length:256}, (_,n) => {
+    let c=n;
+    for(let k=0;k<8;k++) c=((c&1)?(0xEDB88320^(c>>>1)):(c>>>1));
+    return c>>>0;
+  }));
+  let crc = -1;
+  for (let i=0; i<buf.length; i++) crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 255];
+  return (crc ^ -1) >>> 0;
+}
+
+function u16(n) { return [n & 255, (n >>> 8) & 255]; }
+function u32(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; }
+
+function zipStore(files) {
+  const enc = new TextEncoder();
+  let chunks = [], central = [], offset = 0;
+  for (const name of Object.keys(files)) {
+    const nameBytes = enc.encode(name), data = enc.encode(files[name]), crc = crc32(data);
+    const local = new Uint8Array([0x50,0x4b,0x03,0x04, ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameBytes.length), ...u16(0)]);
+    chunks.push(local, nameBytes, data);
+    const cent = new Uint8Array([0x50,0x4b,0x01,0x02, ...u16(20), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameBytes.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)]);
+    central.push(cent, nameBytes);
+    offset += local.length + nameBytes.length + data.length;
+  }
+  const centralSize = central.reduce((s,c)=>s+c.length,0), centralOffset = offset;
+  const eocd = new Uint8Array([0x50,0x4b,0x05,0x06, ...u16(0), ...u16(0), ...u16(Object.keys(files).length), ...u16(Object.keys(files).length), ...u32(centralSize), ...u32(centralOffset), ...u16(0)]);
+  return new Blob([...chunks, ...central, eocd], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+
+function downloadOrder() {
+  const blob = makeXlsxBlob(trials.map(t => ({order:t.order, id:t.id, sentence:t.sentence})));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = safeFilename(participantInitial) + ".xlsx";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function finishExperiment() {
+  showOnly("end");
+  if (!saved) {
+    saved = true;
+    downloadOrder();
+  }
+}
+
+document.getElementById("startBtn").addEventListener("click", startExperiment);
+document.getElementById("participantInitial").addEventListener("keydown", e => {
+  if (e.key === "Enter") startExperiment();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key && e.key.toLowerCase() === "v") {
+    nextTrial();
+  }
+});
+
+document.getElementById("downloadAgain").addEventListener("click", downloadOrder);
+window.addEventListener("resize", fitSentenceText);
+</script>
+</body>
+</html>

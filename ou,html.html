@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>실험</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;overflow:hidden}
+.screen{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+.card{width:min(880px,100%);text-align:center}
+.guide{white-space:pre-line;font-size:clamp(18px,2.8vw,25px);line-height:1.7}
+.row{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+input{font-size:20px;padding:14px 18px;border:1px solid #ccc;border-radius:12px}
+button{font-size:20px;padding:14px 24px;background:#111;color:#fff;border:0;border-radius:12px}
+.hidden{display:none}
+.sentence{width:100%;text-align:center;white-space:nowrap;font-weight:700;overflow:hidden}
+.end{font-size:clamp(32px,5vw,60px);white-space:pre-line;font-weight:800}
+</style></head><body>
+<section id=s class=screen><div class=card><div class=guide>음성 실험 참여에 감사드립니다.
+
+잠시 휴식 후 다음 실험으로 넘어가겠습니다.</div><div class=row><input id=i placeholder="이니셜을 입력해 주세요"><button onclick="st()">시작하기</button></div></div></section>
+<section id=t class="screen hidden"><div id=sen class=sentence></div></section>
+<section id=e class="screen hidden"><div class=end>실험이 종료되었습니다.
+감사합니다.</div></section>
+<script>
+const RAW_ITEMS=[{"id": "a1", "sentence": "다음은 일부보증 입니다"}, {"id": "a2", "sentence": "다음은 정보부대 입니다"}, {"id": "a3", "sentence": "다음은 순수소설 입니다"}, {"id": "a4", "sentence": "다음은 불소수지 입니다"}, {"id": "a5", "sentence": "다음은 명주조개 입니다"}, {"id": "a6", "sentence": "다음은 구조주의 입니다"}, {"id": "a7", "sentence": "다음은 연구고민 입니다"}, {"id": "a8", "sentence": "다음은 밤고구마 입니다"}, {"id": "a9", "sentence": "다음은 가부장적 입니다"}, {"id": "a10", "sentence": "다음은 거수경례 입니다"}, {"id": "a11", "sentence": "다음은 다주택자 입니다"}, {"id": "a12", "sentence": "다음은 개구쟁이 입니다"}, {"id": "a13", "sentence": "다음은 구명부표 입니다"}, {"id": "a14", "sentence": "다음은 뇌하수체 입니다"}, {"id": "a15", "sentence": "다음은 기념주화 입니다"}, {"id": "a16", "sentence": "다음은 반영구적 입니다"}, {"id": "a17", "sentence": "다음은 정보기관 입니다"}, {"id": "a18", "sentence": "다음은 저소득층 입니다"}, {"id": "a19", "sentence": "다음은 위조지폐 입니다"}, {"id": "a20", "sentence": "다음은 간고등어 입니다"}, {"id": "a21", "sentence": "다음은 금은보화 입니다"}, {"id": "a22", "sentence": "다음은 대하소설 입니다"}, {"id": "a23", "sentence": "다음은 비상조치 입니다"}, {"id": "a24", "sentence": "다음은 기말고사 입니다"}];
+let p='',tr=[],idx=0,saved=false;
+function sh(a){a=a.slice();for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function st(){p=i.value.trim();if(!p){alert('이니셜을 입력해 주세요.');return}tr=sh(RAW_ITEMS).map((x,n)=>({...x,order:n+1}));s.classList.add('hidden');t.classList.remove('hidden');show();}
+function fit(){let e=sen;let z=84;e.style.fontSize=z+'px';while(e.scrollWidth>e.clientWidth&&z>14){z--;e.style.fontSize=z+'px';}}
+function show(){sen.textContent=tr[idx].sentence;fit();}
+document.addEventListener('keydown',ev=>{if(ev.key.toLowerCase()!=='v'||t.classList.contains('hidden'))return;idx++;if(idx>=tr.length){t.classList.add('hidden');e.classList.remove('hidden');dl();}else show();});
+window.onresize=fit;
+function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function dl(){if(saved)return;saved=true;let csv='order,id,sentence\n'+tr.map(r=>`${r.order},${r.id},"${r.sentence.replace(/"/g,'""')}"`).join('\n');let b=new Blob([csv],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=p+'.csv';a.click();}
+</script></body></html>
