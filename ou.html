@@ -46,7 +46,7 @@ function sh(a){a=a.slice();for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.r
 function st(){p=i.value.trim();if(!p){alert('이니셜을 입력해 주세요.');return}tr=sh(RAW_ITEMS).map((x,n)=>({...x,order:n+1}));s.classList.add('hidden');t.classList.remove('hidden');show();}
 function fit(){let e=sen;let z=84;e.style.fontSize=z+'px';while(e.scrollWidth>e.clientWidth&&z>14){z--;e.style.fontSize=z+'px';}}
 function show(){sen.textContent=tr[idx].sentence;fit();}
-document.addEventListener('keydown',ev=>{if(ev.key.toLowerCase()!=='v'||t.classList.contains('hidden'))return;idx++;if(idx>=tr.length){t.classList.add('hidden');e.classList.remove('hidden');dl();}else show();});
+document.addEventListener('keydown',ev=>{if(ev.key.toLowerCase()!=='c'||t.classList.contains('hidden'))return;idx++;if(idx>=tr.length){t.classList.add('hidden');e.classList.remove('hidden');dl();}else show();});
 window.onresize=fit;
 function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 function dl(){if(saved)return;saved=true;let csv='order,id,sentence\n'+tr.map(r=>`${r.order},${r.id},"${r.sentence.replace(/"/g,'""')}"`).join('\n');let b=new Blob([csv],{type:'text/csv;charset=utf-8;'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=p+'.csv';a.click();}
