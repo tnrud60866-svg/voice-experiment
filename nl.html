@@ -114,7 +114,7 @@
   <div class="card">
     <div class="break-text">잠시 쉬어가겠습니다.
 
-준비가 되셨으면 실험자가 c 키를 눌러
+준비가 되셨으면 화면을 눌러
 다음 문장부터 이어서 진행하겠습니다.</div>
   </div>
 </section>
@@ -198,14 +198,53 @@ function showTrial() {
 }
 
 function nextTrial() {
-  const breakVisible = !document.getElementById("break").classList.contains("hidden");
-  const trialVisible = !document.getElementById("trial").classList.contains("hidden");
+  const breakVisible =
+    !document.getElementById("break").classList.contains("hidden");
+  const trialVisible =
+    !document.getElementById("trial").classList.contains("hidden");
 
   if (breakVisible) {
     showOnly("trial");
     showTrial();
     return;
   }
+
+  if (!trialVisible) return;
+
+  index += 1;
+
+  if (index === 50 && !breakShown && index < trials.length) {
+    breakShown = true;
+    showOnly("break");
+    return;
+  }
+
+  if (index >= trials.length) {
+    finishExperiment();
+  } else {
+    showTrial();
+  }
+}
+
+function previousTrial() {
+  const breakVisible =
+    !document.getElementById("break").classList.contains("hidden");
+  const trialVisible =
+    !document.getElementById("trial").classList.contains("hidden");
+
+  if (!breakVisible && !trialVisible) return;
+  if (index <= 0) return;
+
+  index -= 1;
+
+  // 50번째 문장 이전으로 돌아가면 휴식도 다시 표시
+  if (index < 50) {
+    breakShown = false;
+  }
+
+  showOnly("trial");
+  showTrial();
+}
 
   if (!trialVisible) return;
 
@@ -317,10 +356,21 @@ document.getElementById("participantInitial").addEventListener("keydown", e => {
   if (e.key === "Enter") startExperiment();
 });
 
-document.addEventListener("keydown", e => {
-  if (e.key && e.key.toLowerCase() === "c") {
+// 오른쪽 절반: 다음 / 왼쪽 절반: 이전
+function handleScreenTap(e) {
+  const bounds = e.currentTarget.getBoundingClientRect();
+  const middle = bounds.left + bounds.width / 2;
+
+  if (e.clientX >= middle) {
     nextTrial();
+  } else {
+    previousTrial();
   }
+}
+
+["trial", "break"].forEach(id => {
+  document.getElementById(id).addEventListener("click", handleScreenTap);
+});
 });
 
 document.getElementById("downloadAgain").addEventListener("click", downloadOrder);
